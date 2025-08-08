@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lunch Roulette — No API Key</title>
+<style>
+  :root {
+    --bg1: #fdfbfb;
+    --bg2: #ebedee;
+    --primary: #6c5ce7;
+    --primary-2: #a29bfe;
+    --accent: #00b894;
+    --danger: #ff7675;
+    --text: #2d3436;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 960px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 {
+    font-size: 20px;
+    margin: 0;
+    letter-spacing: .3px;
+  }
+  header .badge {
+    margin-left: auto;
+    background: rgba(255,255,255,.2);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+  .container {
+    display: grid;
+    grid-template-columns: 440px 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .controls > div {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    padding: 12px;
+  }
+  .row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .row label {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+    background: #f6f6f6; padding: 6px 10px; border-radius: 999px;
+  }
+  input[type="range"] { width: 100%; }
+  button.primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .05s ease-in-out, box-shadow .2s;
+    box-shadow: 0 10px 20px rgba(108,92,231,.2);
+  }
+  button.primary:active { transform: translateY(1px); }
+  button.ghost {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary-2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .hint {
+    font-size: 12px; color: #636e72; margin-top: 6px;
+  }
+  canvas { width: 100%; height: auto; }
+  .result {
+    display: grid; gap: 8px;
+    background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 14px;
+  }
+  .result h3 { margin: 0; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #f1f2f6; border: 1px solid #e9ecef;
+  }
+  .links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .links a {
+    text-decoration: none; padding: 8px 10px; border-radius: 10px; font-weight: 600; border: 1px solid #ddd;
+  }
+  .links a.map { color: white; background: var(--accent); border-color: var(--accent); }
+  .links a.spin-again { color: var(--primary); background: #f6f2ff; border-color: #e9ddff; }
+  .loading {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: 10px; background: #fff3cd; color: #7a5e00; border: 1px solid #ffe69c; font-size: 14px;
+  }
+  .error {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: 10px; background: #fdecec; color: #8c1d18; border: 1px solid #f9c2c2; font-size: 14px;
+  }
+  .count { font-size: 13px; color:#636e72; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <div style="font-size:24px;">🥡</div>
+      <h1>Lunch Roulette</h1>
+      <span class="badge">No API Key • OSM</span>
+    </header>
+    <div class="container">
+      <section class="panel">
+        <h2 style="margin:0 0 8px 0;">1) Find places near you</h2>
+        <div class="controls">
+          <div>
+            <div class="row"><strong>Types</strong></div>
+            <div class="row" style="margin-top:8px;">
+              <label><input type="checkbox" class="type" value="restaurant" checked/> Restaurant 🍽️</label>
+              <label><input type="checkbox" class="type" value="fast_food" checked/> Fast Food 🍔</label>
+              <label><input type="checkbox" class="type" value="cafe" checked/> Cafe ☕</label>
+              <label><input type="checkbox" class="type" value="food_court"/> Food Court 🍱</label>
+            </div>
+          </div>
+          <div>
+            <div class="row"><strong>Radius</strong><span id="radiusLabel" class="chip">1.0 mi</span></div>
+            <input id="radius" type="range" min="0.2" max="2.0" step="0.1" value="1.0"/>
+            <div class="hint">Tip: 1 mile ≈ 1,609 m</div>
+          </div>
+        </div>
+        <div class="row">
+          <button id="go" class="primary">📍 Find & Spin</button>
+          <button id="justFind" class="ghost">🔎 Just find</button>
+          <span id="status" class="hint"></span>
+        </div>
+        <div style="margin-top:10px;" class="count" id="count"></div>
+        <div id="list" style="margin-top:12px; display:grid; gap:8px;"></div>
+      </section>
+      <section class="panel">
+        <h2 style="margin:0 0 8px 0;">2) Spin the wheel</h2>
+        <canvas id="wheel" width="600" height="600" style="max-width:100%;"></canvas>
+        <div class="result" id="result" style="display:none;"></div>
+      </section>
+    </div>
+  </div>
+
+<script>
+// ===== Utilities =====
+const metersPerMile = 1609.344;
+const $ = (sel)=>document.querySelector(sel);
+const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
+const statusEl = $("#status");
+const countEl = $("#count");
+const listEl = $("#list");
+const resultEl = $("#result");
+const wheel = $("#wheel");
+const ctx = wheel.getContext("2d");
+let items = [];
+let chosen = null;
+
+// Distance calc
+function haversine(lat1, lon1, lat2, lon2) {
+  const toRad = d => d * Math.PI / 180;
+  const R = 6371000;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R*c;
+}
+
+// Cuisine/emoji
+function tagToEmoji(tags={}){
+  const cuisine = (tags.cuisine||"").toLowerCase();
+  if (cuisine.includes("pizza")) return "🍕";
+  if (cuisine.includes("burger")) return "🍔";
+  if (cuisine.includes("coffee")) return "☕";
+  if (cuisine.includes("mexican")||cuisine.includes("taco")) return "🌮";
+  if (cuisine.includes("japanese")||cuisine.includes("sushi")) return "🍣";
+  if (cuisine.includes("chinese")) return "🥡";
+  if (cuisine.includes("vietnamese")) return "🍜";
+  if (cuisine.includes("thai")) return "🍜";
+  if (cuisine.includes("indian")) return "🍛";
+  if (cuisine.includes("italian")||cuisine.includes("pasta")) return "🍝";
+  return "🍽️";
+}
+
+// ===== UI wiring =====
+const radius = $("#radius");
+const radiusLabel = $("#radiusLabel");
+radius.addEventListener("input", ()=>{
+  radiusLabel.textContent = `${(+radius.value).toFixed(1)} mi`;
+});
+
+$("#justFind").addEventListener("click", ()=> main(false));
+$("#go").addEventListener("click", ()=> main(true));
+
+async function main(spinAfter){
+  resultEl.style.display = "none";
+  listEl.innerHTML = "";
+  countEl.textContent = "";
+  items = [];
+  chosen = null;
+  paintWheel([]);
+
+  statusEl.innerHTML = `<span class="loading">Requesting location…</span>`;
+  // Ask for geolocation; must be HTTPS or localhost
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    const {latitude:lat, longitude:lon} = pos.coords;
+    const miles = +radius.value;
+    const meters = Math.round(miles * metersPerMile);
+    const types = $$(".type:checked").map(cb=>cb.value);
+    statusEl.innerHTML = `<span class="loading">Searching OpenStreetMap within ${miles.toFixed(1)} mi…</span>`;
+    try {
+      const pois = await fetchOSM(lat, lon, meters, types);
+      if (!pois.length){
+        statusEl.innerHTML = `<span class="error">No places found. Try increasing radius or types.</span>`;
+        paintWheel([]);
+        return;
+      }
+      // Decorate with distance, sort by distance
+      items = pois.map(p=>{
+        const d = haversine(lat, lon, p.lat, p.lon);
+        return {...p, distance:d};
+      }).sort((a,b)=>a.distance-b.distance);
+
+      countEl.textContent = `${items.length} places found`;
+      listEl.innerHTML = items.slice(0, 25).map(p=>renderItem(p)).join("");
+      paintWheel(items);
+
+      statusEl.textContent = "Ready.";
+      if (spinAfter) spinWheel(items);
+    } catch (e){
+      console.error(e);
+      statusEl.innerHTML = `<span class="error">Failed to load places. Overpass might be busy — try again.</span>`;
+    }
+  }, (err)=>{
+    console.warn(err);
+    const msg = err && err.message ? err.message : "Location unavailable";
+    statusEl.innerHTML = `<span class="error">Location error: ${msg}. Tip: use HTTPS or localhost and allow permission.</span>`;
+  }, { enableHighAccuracy:true, timeout: 15000, maximumAge: 0 });
+}
+
+function renderItem(p){
+  const miles = (p.distance / metersPerMile).toFixed(2);
+  const name = p.tags.name || "(Unnamed)";
+  const type = p.tags.amenity || "food";
+  const emoji = tagToEmoji(p.tags);
+  const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&query_place_id=&query=${p.lat},${p.lon}`;
+  const direct = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`;
+  return `<div class="row" style="justify-content:space-between; border:1px solid #eee; background:#fff; padding:10px; border-radius:10px;">
+    <div>
+      <div style="font-weight:700">${emoji} ${name}</div>
+      <div class="hint">${type}${p.tags.cuisine? " • " + p.tags.cuisine : ""}</div>
+    </div>
+    <div class="row" style="gap:6px;">
+      <span class="chip">${miles} mi</span>
+      <a class="map" target="_blank" href="${direct}">Map</a>
+    </div>
+  </div>`;
+}
+
+// ===== Overpass fetch =====
+async function fetchOSM(lat, lon, radiusMeters, types){
+  // Build amenity OR-list
+  const typeRegex = types.join("|");
+  // Query nodes + ways + relations with amenity in types around
+  const q = `[out:json][timeout:25];
+(
+  node["amenity"~"${typeRegex}"](around:${radiusMeters},${lat},${lon});
+  way["amenity"~"${typeRegex}"](around:${radiusMeters},${lat},${lon});
+  relation["amenity"~"${typeRegex}"](around:${radiusMeters},${lat},${lon});
+);
+out center 100;`;
+
+  const url = "https://overpass-api.de/api/interpreter";
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+    body: "data=" + encodeURIComponent(q)
+  });
+  if (!res.ok) throw new Error("Overpass error: " + res.status);
+  const json = await res.json();
+  const elements = json.elements || [];
+  // Normalize to lat/lon
+  return elements.map(el=>{
+    let lat = el.lat, lon = el.lon;
+    if (el.type !== "node" && el.center){ lat = el.center.lat; lon = el.center.lon; }
+    return { id: `${el.type}/${el.id}`, lat, lon, tags: el.tags || {} };
+  }).filter(p=>p.lat && p.lon && (p.tags.name || p.tags.cuisine || p.tags.amenity));
+}
+
+// ===== Wheel drawing & spin =====
+function paintWheel(data){
+  const W = wheel.width, H = wheel.height;
+  ctx.clearRect(0,0,W,H);
+  const cx = W/2, cy = H/2, r = Math.min(W,H)/2 - 10;
+  // Draw guide
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.fillStyle = "#f8f8ff";
+  ctx.fill();
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "#e5e1ff";
+  ctx.stroke();
+
+  // Pointer
+  ctx.beginPath();
+  ctx.moveTo(0,-r-2);
+  ctx.lineTo(14, -r-18);
+  ctx.lineTo(-14, -r-18);
+  ctx.closePath();
+  ctx.fillStyle = "#ffbe0b";
+  ctx.fill();
+  ctx.restore();
+
+  if (!data || !data.length) return;
+
+  const n = Math.min(24, data.length); // cap to 24 slices for readability
+  const sliceAngle = (Math.PI*2)/n;
+  for(let i=0;i<n;i++){
+    const start = i*sliceAngle;
+    const end = start + sliceAngle;
+    // slice
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,r,start,end);
+    ctx.closePath();
+    ctx.fillStyle = i%2 ? "#efeaff" : "#e7f7ff";
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // label
+    ctx.rotate(start + sliceAngle/2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#2d3436";
+    ctx.font = "bold 14px system-ui, -apple-system, Segoe UI";
+    const name = (data[i].tags.name || data[i].tags.cuisine || "Food").slice(0, 24);
+    ctx.fillText(`${tagToEmoji(data[i].tags)} ${name}`, r-12, 4);
+    ctx.restore();
+  }
+}
+
+function spinWheel(data){
+  if (!data.length) return;
+  // Choose a random index among capped slices
+  const entries = Math.min(24, data.length);
+  const index = Math.floor(Math.random()*entries);
+  chosen = data[index];
+  // Calculate final angle so that index lands at pointer (top)
+  const slice = (Math.PI*2)/entries;
+  const targetAngle = (Math.PI*1.5) - (index*slice + slice/2); // pointer is at -90deg
+  // Add multiple spins + easing
+  const extraTurns = 4 * Math.PI*2;
+  const start = performance.now();
+  const duration = 3800 + Math.random()*800;
+
+  function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
+
+  (function animate(ts){
+    const t = Math.min(1, (ts - start)/duration);
+    const eased = easeOutCubic(t);
+    const angle = extraTurns*(1-eased) + targetAngle*eased;
+    drawWheelAt(angle, data);
+    if (t < 1) requestAnimationFrame(animate);
+    else showResult(chosen);
+  })(start);
+}
+
+function drawWheelAt(angle, data){
+  const W = wheel.width, H = wheel.height;
+  ctx.clearRect(0,0,W,H);
+  const cx = W/2, cy = H/2, r = Math.min(W,H)/2 - 10;
+
+  // Pointer fixed
+  ctx.save();
+  ctx.translate(cx, cy);
+  // Wheel
+  ctx.rotate(angle);
+  const n = Math.min(24, data.length);
+  const sliceAngle = (Math.PI*2)/n;
+  for(let i=0;i<n;i++){
+    const start = i*sliceAngle;
+    const end = start + sliceAngle;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,r,start,end);
+    ctx.closePath();
+    ctx.fillStyle = i%2 ? "#efeaff" : "#e7f7ff";
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // label
+    ctx.save();
+    ctx.rotate(start + sliceAngle/2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#2d3436";
+    ctx.font = "bold 14px system-ui, -apple-system, Segoe UI";
+    const name = (data[i].tags.name || data[i].tags.cuisine || "Food").slice(0, 24);
+    ctx.fillText(`${tagToEmoji(data[i].tags)} ${name}`, r-12, 4);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // Pointer
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath();
+  ctx.moveTo(0,-r-2);
+  ctx.lineTo(14, -r-18);
+  ctx.lineTo(-14, -r-18);
+  ctx.closePath();
+  ctx.fillStyle = "#ffbe0b";
+  ctx.fill();
+  ctx.restore();
+}
+
+function showResult(p){
+  if (!p) return;
+  const name = p.tags.name || "(Unnamed)";
+  const type = p.tags.amenity || "food";
+  const cuisine = p.tags.cuisine ? ` • ${p.tags.cuisine}` : "";
+  const direct = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`;
+  const osm = `https://www.openstreetmap.org/${p.id}`;
+  resultEl.style.display = "grid";
+  resultEl.innerHTML = `
+    <h3>${tagToEmoji(p.tags)} ${name}</h3>
+    <div class="chips">
+      <span class="chip">${type}${cuisine}</span>
+      ${p.tags.takeaway === "yes" ? '<span class="chip">Takeaway ✅</span>' : ''}
+      ${p.tags.delivery === "yes" ? '<span class="chip">Delivery ✅</span>' : ''}
+    </div>
+    <div class="links">
+      <a class="map" target="_blank" href="${direct}">Open Directions</a>
+      <a class="spin-again" href="#" id="again">Spin again</a>
+      <a target="_blank" href="${osm}">OpenStreetMap</a>
+    </div>
+  `;
+  $("#again").addEventListener("click", (e)=>{ e.preventDefault(); spinWheel(items); }, {once:true});
+}
+
+// Paint empty wheel on load
+paintWheel([]);
+</script>
+</body>
+</html>
